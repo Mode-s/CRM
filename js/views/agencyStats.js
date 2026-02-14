@@ -12,7 +12,7 @@ const AgencyStatsView = (() => {
             const inprogress = agencyRequests.filter(r => r.status === 'inprogress').length;
             const completed = agencyRequests.filter(r => r.status === 'completed').length;
             const cancelled = agencyRequests.filter(r => r.status === 'cancelled').length;
-            const totalSites = agencyRequests.reduce((sum, r) => sum + Store.query('sites', s => s.request_id === r.id && s.status === 'completed').length, 0);
+            const totalSites = agencyRequests.reduce((sum, r) => sum + Store.query('sites', s => s.request_id === r.id && (s.status === 'completed' || s.status === 'et') && s.service_type !== 'gas').length, 0);
             const defRate = agencyRequests.length > 0 ? Math.round((deficiency / agencyRequests.length) * 100) : 0;
 
             return { agency: a, total: agencyRequests.length, deficiency, inprogress, completed, cancelled, totalSites, defRate };

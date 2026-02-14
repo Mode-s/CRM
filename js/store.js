@@ -11,7 +11,9 @@ const Store = (() => {
         sites: 'fmt_sites',
         images: 'fmt_images',
         comments: 'fmt_comments',
-        auditLogs: 'fmt_audit_logs'
+        auditLogs: 'fmt_audit_logs',
+        monthlyStats: 'fmt_monthly_stats',
+        monthlyTargets: 'fmt_monthly_targets'
     };
 
     // --- Utility ---

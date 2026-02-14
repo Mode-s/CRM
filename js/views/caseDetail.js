@@ -52,6 +52,15 @@ const CaseDetailView = (() => {
                             <div><span class="text-sm text-secondary">代理店:</span> ${agency ? agency.name : '-'}</div>
                             <div><span class="text-sm text-secondary">依頼日:</span> ${new Date(request.created_at).toLocaleString('ja-JP')}</div>
                         </div>
+                        <div class="form-row mt-8" style="align-items:center;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label class="form-label text-sm text-secondary" style="margin-bottom:4px;">申込番号</label>
+                                <input type="text" class="form-input" id="application-number" value="${request.application_number || ''}" placeholder="申込番号を入力" style="max-width:250px;">
+                            </div>
+                            <div style="padding-top:20px;">
+                                <button class="btn btn-sm btn-primary" onclick="CaseDetailView.saveApplicationNumber('${requestId}')"><i class="fas fa-save"></i> 保存</button>
+                            </div>
+                        </div>
                         ${request.remarks ? `<div class="mt-8"><span class="text-sm text-secondary">備考:</span> <span class="text-sm">${request.remarks}</span></div>` : ''}
                     </div>
                 </div>
@@ -120,10 +129,9 @@ const CaseDetailView = (() => {
                                 <div><span class="text-sm text-secondary">契約者名:</span><br><strong>${corp.last_name} ${corp.first_name || ''}</strong></div>
                                 <div><span class="text-sm text-secondary">カナ:</span><br>${corp.last_name_kana || ''} ${corp.first_name_kana || ''}</div>
                                 <div><span class="text-sm text-secondary">区分:</span><br>${corp.customer_type === '1' ? '個人' : corp.customer_type === '2' ? '法人' : '屋号'}</div>
-                                <div><span class="text-sm text-secondary">住所:</span><br>${corp.prefecture || ''}${corp.city || ''}${corp.town || ''}${corp.street || ''} ${corp.building_name || ''}</div>
+                                <div><span class="text-sm text-secondary">住所:</span><br>${corp.prefecture || ''}${corp.city || ''}${corp.town || ''}${corp.street || ''}</div>
                                 <div><span class="text-sm text-secondary">TEL:</span><br>${corp.phone1 || '-'}</div>
                                 <div><span class="text-sm text-secondary">支払方法:</span><br>${corp.payment_type === '1' ? 'クレジットカード' : corp.payment_type === '2' ? '口座振替' : corp.payment_type === '3' ? 'コンビニ払い' : '-'}</div>
-                                <div><span class="text-sm text-secondary">メール:</span><br>${corp.mail_address || '-'}</div>
                                 <div><span class="text-sm text-secondary">生年月日:</span><br>${corp.birthday || '-'}</div>
                             </div>
                         ` : '<p class="text-secondary">法人情報なし</p>'}
@@ -202,22 +210,20 @@ const CaseDetailView = (() => {
                     <div class="flex items-center gap-12">
                         ${getStatusBadge(site.status)}
                         <strong>${site.supply_point_id || '地点番号未設定'}</strong>
-                        <span class="text-sm text-secondary">${site.service_type === 'gas' ? 'ガス' : '電気'}</span>
-                        <span class="text-sm text-secondary">${site.pps_name || ''}</span>
+                        <span class="text-sm text-secondary">${site.service_type === 'gas' ? 'ガス' : site.service_type === 'power' ? '動力' : '従量'}</span>
                     </div>
                     <i class="fas fa-chevron-down chevron"></i>
                 </div>
                 <div class="expandable-body">
                     <div style="padding:16px;">
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px;">
-                            <div><span class="text-xs text-secondary">PPS:</span><br><strong class="text-sm">${site.pps_name || '-'}</strong></div>
+                            <div><span class="text-xs text-secondary">お客様番号:</span><br><strong class="text-sm">${site.customer_number || '-'}</strong></div>
                             <div><span class="text-xs text-secondary">契約プラン:</span><br><strong class="text-sm">${site.plan_name || '-'}</strong></div>
                             <div><span class="text-xs text-secondary">申込区分:</span><br><strong class="text-sm">${appTypeMap[site.application_type] || '-'}</strong></div>
                             <div><span class="text-xs text-secondary">契約容量:</span><br><strong class="text-sm">${site.contract_capacity || '-'}</strong></div>
                             <div><span class="text-xs text-secondary">名義人:</span><br><strong class="text-sm">${site.power_customer_last_name || ''} ${site.power_customer_first_name || ''}</strong></div>
                             <div><span class="text-xs text-secondary">名義カナ:</span><br><strong class="text-sm">${site.power_customer_last_name_kana || ''} ${site.power_customer_first_name_kana || ''}</strong></div>
                             <div><span class="text-xs text-secondary">住所:</span><br><strong class="text-sm">${site.power_prefecture || ''}${site.power_city || ''}${site.power_town || ''}${site.power_street || ''}</strong></div>
-                            <div><span class="text-xs text-secondary">建物名:</span><br><strong class="text-sm">${site.power_building_name || '-'}</strong></div>
                             <div><span class="text-xs text-secondary">最新料金:</span><br><strong class="text-sm">${site.latest_charges ? site.latest_charges + '円' : '-'}</strong></div>
                             <div><span class="text-xs text-secondary">最新使用量:</span><br><strong class="text-sm">${site.latest_usage ? site.latest_usage + 'kWh' : '-'}</strong></div>
                             <div><span class="text-xs text-secondary">最新明細年月:</span><br><strong class="text-sm">${site.latest_date || '-'}</strong></div>
@@ -293,17 +299,14 @@ const CaseDetailView = (() => {
             <div class="form-group">
                 <label class="form-label">サービス種別</label>
                 <select class="form-select" id="new-site-service">
-                    <option value="electric">電気</option>
+                    <option value="metered">従量</option>
+                    <option value="power">動力</option>
                     <option value="gas">ガス</option>
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">PPS</label>
-                <select class="form-select" id="new-site-pps">
-                    <option value="A0517" data-name="エネパル">エネパル</option>
-                    <option value="A0023" data-name="サイサン(ガス)">サイサン(ガス)</option>
-                    <option value="A0086" data-name="エコログガス">エコログガス</option>
-                </select>
+                <label class="form-label">お客様番号</label>
+                <input type="text" class="form-input" id="new-site-customer-number" placeholder="お客様番号を入力">
             </div>
         `, `
             <button class="btn btn-secondary" onclick="Modal.hide()">キャンセル</button>
@@ -314,17 +317,19 @@ const CaseDetailView = (() => {
     function saveSite(requestId) {
         const spid = document.getElementById('new-site-spid').value;
         const serviceType = document.getElementById('new-site-service').value;
-        const ppsSelect = document.getElementById('new-site-pps');
-        const ppsCode = ppsSelect.value;
-        const ppsName = ppsSelect.options[ppsSelect.selectedIndex].dataset.name;
+        const customerNumber = document.getElementById('new-site-customer-number').value;
+
+        // Get contract_corporation_type from parent corporation
+        const request = Store.getById('requests', requestId);
+        const corp = request ? Store.getById('corporations', request.corporation_id) : null;
+        const corpType = corp ? corp.customer_type : '';
 
         Store.create('sites', {
             request_id: requestId,
             corporation_id: Store.getById('requests', requestId).corporation_id,
             supply_point_id: spid,
             service_type: serviceType,
-            pps_code: ppsCode,
-            pps_name: ppsName,
+            customer_number: customerNumber,
             application_type: '',
             plan_name: '',
             contract_capacity: '',
@@ -344,7 +349,7 @@ const CaseDetailView = (() => {
             option_plans: [],
             moving_in_date: '',
             note: '',
-            contract_corporation_type: '',
+            contract_corporation_type: corpType,
             saisan_gas_yoto: '',
             ecolog_gas_yoto: '',
             power_amounts_form: '',
@@ -368,6 +373,11 @@ const CaseDetailView = (() => {
         const request = Store.getById('requests', requestId);
         if (!request) return;
         const corp = Store.getById('corporations', request.corporation_id);
+        const user = Auth.currentUser();
+        const isAdmin = user.role === 'admin';
+
+        // Auto-set contract_corporation_type from corporation if not set
+        const corpType = site.contract_corporation_type || (corp ? corp.customer_type : '');
 
         Modal.show('地点情報入力', `
             <div style="max-height:65vh;overflow-y:auto;padding-right:8px;">
@@ -380,17 +390,14 @@ const CaseDetailView = (() => {
                     <div class="form-group">
                         <label class="form-label">サービス種別</label>
                         <select class="form-select" id="edit-service-type">
-                            <option value="electric" ${site.service_type === 'electric' ? 'selected' : ''}>電気</option>
+                            <option value="metered" ${site.service_type === 'metered' ? 'selected' : ''}>従量</option>
+                            <option value="power" ${site.service_type === 'power' ? 'selected' : ''}>動力</option>
                             <option value="gas" ${site.service_type === 'gas' ? 'selected' : ''}>ガス</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">PPS</label>
-                        <select class="form-select" id="edit-pps">
-                            <option value="A0517" data-name="エネパル" ${site.pps_code === 'A0517' ? 'selected' : ''}>エネパル</option>
-                            <option value="A0023" data-name="サイサン(ガス)" ${site.pps_code === 'A0023' ? 'selected' : ''}>サイサン(ガス)</option>
-                            <option value="A0086" data-name="エコログガス" ${site.pps_code === 'A0086' ? 'selected' : ''}>エコログガス</option>
-                        </select>
+                        <label class="form-label">お客様番号</label>
+                        <input type="text" class="form-input" id="edit-customer-number" value="${site.customer_number || ''}" placeholder="お客様番号を入力">
                     </div>
                 </div>
                 <div class="form-row">
@@ -416,11 +423,11 @@ const CaseDetailView = (() => {
                     </div>
                     <div class="form-group">
                         <label class="form-label">契約者法人区分</label>
-                        <select class="form-select" id="edit-corp-type">
+                        <select class="form-select" id="edit-corp-type" ${!isAdmin ? 'disabled' : ''}>
                             <option value="">選択</option>
-                            <option value="1" ${site.contract_corporation_type === '1' ? 'selected' : ''}>個人</option>
-                            <option value="2" ${site.contract_corporation_type === '2' ? 'selected' : ''}>法人</option>
-                            <option value="3" ${site.contract_corporation_type === '3' ? 'selected' : ''}>屋号</option>
+                            <option value="1" ${corpType === '1' ? 'selected' : ''}>個人</option>
+                            <option value="2" ${corpType === '2' ? 'selected' : ''}>法人</option>
+                            <option value="3" ${corpType === '3' ? 'selected' : ''}>屋号</option>
                         </select>
                     </div>
                 </div>
@@ -473,15 +480,9 @@ const CaseDetailView = (() => {
                         <input type="text" class="form-input" id="edit-ptown" value="${site.power_town || ''}">
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">番地</label>
-                        <input type="text" class="form-input" id="edit-pstreet" value="${site.power_street || ''}">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">建物名</label>
-                        <input type="text" class="form-input" id="edit-pbuilding" value="${site.power_building_name || ''}">
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">番地・建物名</label>
+                    <input type="text" class="form-input" id="edit-pstreet" value="${site.power_street || ''}">
                 </div>
 
                 <h4 style="margin:20px 0 12px;color:var(--primary-600);"><i class="fas fa-file-invoice"></i> 明細情報</h4>
@@ -521,10 +522,19 @@ const CaseDetailView = (() => {
             <button class="btn btn-primary" onclick="CaseDetailView.updateSite('${siteId}','${requestId}')"><i class="fas fa-save"></i> 保存</button>
         `);
 
-        // Set select values after render
+        // Set select values after render + zip auto-fill
         setTimeout(() => {
             const prefEl = document.getElementById('edit-ppref');
             if (prefEl && site.power_prefecture) prefEl.value = site.power_prefecture;
+
+            // Postal code auto-fill for site address
+            const zipEl = document.getElementById('edit-pzip');
+            if (zipEl) {
+                zipEl.addEventListener('input', () => {
+                    const zip = zipEl.value.replace(/[^0-9]/g, '');
+                    if (zip.length === 7) fetchAddress(zip, 'edit-ppref', 'edit-pcity', 'edit-ptown');
+                });
+            }
         }, 50);
     }
 
@@ -543,8 +553,7 @@ const CaseDetailView = (() => {
             'edit-pzip': corp.zip_code,
             'edit-pcity': corp.city,
             'edit-ptown': corp.town,
-            'edit-pstreet': corp.street,
-            'edit-pbuilding': corp.building_name
+            'edit-pstreet': corp.street
         };
         for (const [id, val] of Object.entries(fields)) {
             const el = document.getElementById(id);
@@ -557,15 +566,12 @@ const CaseDetailView = (() => {
     }
 
     function updateSite(siteId, requestId) {
-        const ppsSelect = document.getElementById('edit-pps');
-        const ppsName = ppsSelect ? ppsSelect.options[ppsSelect.selectedIndex].dataset.name : '';
         const optionsStr = document.getElementById('edit-options').value;
 
         Store.update('sites', siteId, {
             supply_point_id: document.getElementById('edit-spid').value,
             service_type: document.getElementById('edit-service-type').value,
-            pps_code: ppsSelect ? ppsSelect.value : '',
-            pps_name: ppsName,
+            customer_number: document.getElementById('edit-customer-number').value,
             application_type: document.getElementById('edit-app-type').value,
             plan_name: document.getElementById('edit-plan').value,
             contract_capacity: document.getElementById('edit-capacity').value,
@@ -579,7 +585,6 @@ const CaseDetailView = (() => {
             power_city: document.getElementById('edit-pcity').value,
             power_town: document.getElementById('edit-ptown').value,
             power_street: document.getElementById('edit-pstreet').value,
-            power_building_name: document.getElementById('edit-pbuilding').value,
             latest_charges: document.getElementById('edit-charges').value,
             latest_usage: document.getElementById('edit-usage').value,
             latest_date: document.getElementById('edit-date').value,
@@ -676,18 +681,12 @@ const CaseDetailView = (() => {
                     <div class="form-group"><label class="form-label">市区町村</label><input type="text" class="form-input" id="ec-city" value="${corp.city || ''}"></div>
                     <div class="form-group"><label class="form-label">町域</label><input type="text" class="form-input" id="ec-town" value="${corp.town || ''}"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">番地</label><input type="text" class="form-input" id="ec-street" value="${corp.street || ''}"></div>
-                    <div class="form-group"><label class="form-label">建物名</label><input type="text" class="form-input" id="ec-building" value="${corp.building_name || ''}"></div>
-                </div>
+                <div class="form-group"><label class="form-label">番地・建物名</label><input type="text" class="form-input" id="ec-street" value="${corp.street || ''}"></div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">TEL1</label><input type="text" class="form-input" id="ec-phone" value="${corp.phone1 || ''}"></div>
                     <div class="form-group"><label class="form-label">TEL2</label><input type="text" class="form-input" id="ec-phone2" value="${corp.phone2 || ''}"></div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group"><label class="form-label">メール</label><input type="text" class="form-input" id="ec-email" value="${corp.mail_address || ''}"></div>
-                    <div class="form-group"><label class="form-label">生年月日</label><input type="date" class="form-input" id="ec-birthday" value="${corp.birthday || ''}"></div>
-                </div>
+                <div class="form-group"><label class="form-label">生年月日</label><input type="date" class="form-input" id="ec-birthday" value="${corp.birthday || ''}"></div>
                 <div class="form-group"><label class="form-label">支払方法</label>
                     <select class="form-select" id="ec-payment">
                         <option value="">選択</option>
@@ -705,6 +704,15 @@ const CaseDetailView = (() => {
         setTimeout(() => {
             const prefEl = document.getElementById('ec-pref');
             if (prefEl && corp.prefecture) prefEl.value = corp.prefecture;
+
+            // Postal code auto-fill for corp address
+            const zipEl = document.getElementById('ec-zip');
+            if (zipEl) {
+                zipEl.addEventListener('input', () => {
+                    const zip = zipEl.value.replace(/[^0-9]/g, '');
+                    if (zip.length === 7) fetchAddress(zip, 'ec-pref', 'ec-city', 'ec-town');
+                });
+            }
         }, 50);
     }
 
@@ -720,10 +728,8 @@ const CaseDetailView = (() => {
             city: document.getElementById('ec-city').value,
             town: document.getElementById('ec-town').value,
             street: document.getElementById('ec-street').value,
-            building_name: document.getElementById('ec-building').value,
             phone1: document.getElementById('ec-phone').value,
             phone2: document.getElementById('ec-phone2').value,
-            mail_address: document.getElementById('ec-email').value,
             birthday: document.getElementById('ec-birthday').value,
             payment_type: document.getElementById('ec-payment').value
         });
@@ -745,10 +751,16 @@ const CaseDetailView = (() => {
         return `<span class="status-badge ${s.class}"><i class="${s.icon}"></i> ${s.label}</span>`;
     }
 
+    function saveApplicationNumber(requestId) {
+        const val = document.getElementById('application-number').value;
+        Store.update('requests', requestId, { application_number: val });
+        Toast.show('申込番号を保存しました', 'success');
+    }
+
     return {
         render, addSite, saveSite, editSite, updateSite,
         completeSite, reopenSite, changeRequestStatus,
         reportDeficiency, submitDeficiency,
-        editCorp, saveCorp, copyCorp
+        editCorp, saveCorp, copyCorp, saveApplicationNumber
     };
 })();

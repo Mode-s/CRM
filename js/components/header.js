@@ -65,6 +65,7 @@ const Header = (() => {
                 return [
                     { path: '/dashboard', label: 'ダッシュボード', icon: 'fas fa-tachometer-alt' },
                     { path: '/cases', label: '投入案件', icon: 'fas fa-inbox' },
+                    { path: '/new-request', label: '新規依頼', icon: 'fas fa-plus-circle' },
                     { path: '/acquired', label: '獲得案件', icon: 'fas fa-trophy' },
                     { path: '/agencies', label: '代理店', icon: 'fas fa-building' },
                     { path: '/users', label: 'ユーザー', icon: 'fas fa-users' }

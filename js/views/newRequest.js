@@ -7,12 +7,14 @@ const NewRequestView = (() => {
 
     function render(container) {
         uploadedImages = [];
+        const user = Auth.currentUser();
+        const backPath = user.role === 'admin' ? '/cases' : '/my-requests';
 
         container.innerHTML = `
             <div class="page-container">
                 <div class="page-header">
                     <h1><i class="fas fa-plus-circle" style="color:var(--primary-500)"></i> 新規投入依頼</h1>
-                    <button class="btn btn-secondary" onclick="Router.navigate('/my-requests')">
+                    <button class="btn btn-secondary" onclick="Router.navigate('${backPath}')">
                         <i class="fas fa-arrow-left"></i> 戻る
                     </button>
                 </div>
@@ -126,15 +128,9 @@ const NewRequestView = (() => {
                             </div>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">番地</label>
-                                <input type="text" class="form-input" id="street">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">建物名</label>
-                                <input type="text" class="form-input" id="building_name">
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">番地・建物名</label>
+                            <input type="text" class="form-input" id="street">
                         </div>
 
                         <div class="form-row">
@@ -148,15 +144,9 @@ const NewRequestView = (() => {
                             </div>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">メールアドレス</label>
-                                <input type="email" class="form-input" id="mail_address">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">生年月日</label>
-                                <input type="date" class="form-input" id="birthday">
-                            </div>
+                        <div class="form-group">
+                            <label class="form-label">生年月日</label>
+                            <input type="date" class="form-input" id="birthday">
                         </div>
 
                         <div class="form-group">
@@ -177,39 +167,6 @@ const NewRequestView = (() => {
                                 <option value="2">口座振替（銀行引落し）</option>
                                 <option value="3">コンビニ払い（請求書払い）</option>
                             </select>
-                        </div>
-
-                        <div id="credit-card-fields" style="display:none;">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">クレジットカード番号</label>
-                                    <input type="text" class="form-input" id="credit_card_number" maxlength="16" placeholder="半角数字">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">カード名義</label>
-                                    <input type="text" class="form-input" id="credit_card_name" placeholder="TARO YAMADA" style="text-transform:uppercase;">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">有効期限（月）</label>
-                                    <select class="form-select" id="credit_card_expire_month">
-                                        <option value="">--</option>
-                                        ${Array.from({ length: 12 }, (_, i) => `<option value="${String(i + 1).padStart(2, '0')}">${String(i + 1).padStart(2, '0')}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">有効期限（年）</label>
-                                    <select class="form-select" id="credit_card_expire_year">
-                                        <option value="">--</option>
-                                        ${Array.from({ length: 11 }, (_, i) => `<option value="${2025 + i}">${2025 + i}</option>`).join('')}
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">セキュリティコード</label>
-                                    <input type="text" class="form-input" id="credit_card_security_code" maxlength="4" placeholder="3桁">
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -241,15 +198,9 @@ const NewRequestView = (() => {
                                     <input type="text" class="form-input" id="billing_town">
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">番地</label>
-                                    <input type="text" class="form-input" id="billing_street">
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">建物名</label>
-                                    <input type="text" class="form-input" id="billing_building">
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">番地・建物名</label>
+                                <input type="text" class="form-input" id="billing_street">
                             </div>
                             <div class="form-group">
                                 <label class="form-label">宛名</label>
@@ -273,6 +224,13 @@ const NewRequestView = (() => {
                     <!-- Request Details -->
                     <div class="form-section">
                         <div class="form-section-title"><i class="fas fa-info-circle"></i> 依頼情報</div>
+                        <div class="form-group">
+                            <label class="form-label">代理店 <span class="required">*</span></label>
+                            <select class="form-select" id="agency_id" required ${user.role !== 'admin' ? 'disabled' : ''}>
+                                <option value="">選択してください</option>
+                                ${Store.getAll('agencies').map(a => `<option value="${a.id}" ${a.id === user.agency_id ? 'selected' : ''}>${a.name}</option>`).join('')}
+                            </select>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">地点数（見込み）</label>
@@ -287,7 +245,7 @@ const NewRequestView = (() => {
 
                     <!-- Submit -->
                     <div class="flex justify-between mt-24">
-                        <button type="button" class="btn btn-secondary" onclick="Router.navigate('/my-requests')">キャンセル</button>
+                        <button type="button" class="btn btn-secondary" onclick="Router.navigate('${backPath}')">キャンセル</button>
                         <button type="submit" class="btn btn-primary btn-lg">
                             <i class="fas fa-paper-plane"></i> 投入依頼を送信
                         </button>
@@ -304,12 +262,6 @@ const NewRequestView = (() => {
         document.getElementById('customer_type').addEventListener('change', (e) => {
             const corpFields = document.getElementById('corp-fields');
             corpFields.style.display = (e.target.value === '2' || e.target.value === '3') ? 'block' : 'none';
-        });
-
-        // Payment type toggle
-        document.getElementById('payment_type').addEventListener('change', (e) => {
-            const ccFields = document.getElementById('credit-card-fields');
-            ccFields.style.display = e.target.value === '1' ? 'block' : 'none';
         });
 
         // Billing address toggle
@@ -331,8 +283,23 @@ const NewRequestView = (() => {
         });
         fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
 
+        // Postal code auto-fill
+        setupZipAutoFill('zip_code', 'prefecture', 'city', 'town');
+        setupZipAutoFill('billing_zip_code', 'billing_prefecture', 'billing_city', 'billing_town');
+
         // Form submit
         document.getElementById('new-request-form').addEventListener('submit', handleSubmit);
+    }
+
+    function setupZipAutoFill(zipId, prefId, cityId, townId) {
+        const zipEl = document.getElementById(zipId);
+        if (!zipEl) return;
+        zipEl.addEventListener('input', () => {
+            const zip = zipEl.value.replace(/[^0-9]/g, '');
+            if (zip.length === 7) {
+                fetchAddress(zip, prefId, cityId, townId);
+            }
+        });
     }
 
     function handleFiles(fileList) {
@@ -433,8 +400,8 @@ const NewRequestView = (() => {
             const fields = ['customer_type', 'last_name', 'first_name', 'last_name_kana', 'first_name_kana',
                 'corporation_number', 'representative_last_name', 'representative_first_name',
                 'representative_last_name_kana', 'representative_first_name_kana',
-                'zip_code', 'prefecture', 'city', 'town', 'street', 'building_name',
-                'phone1', 'phone2', 'mail_address', 'birthday', 'job_type', 'payment_type'];
+                'zip_code', 'prefecture', 'city', 'town', 'street',
+                'phone1', 'phone2', 'birthday', 'job_type', 'payment_type'];
             fields.forEach(f => {
                 const el = document.getElementById(f);
                 if (el && corp[f]) el.value = corp[f];
@@ -442,7 +409,6 @@ const NewRequestView = (() => {
 
             // Trigger change events
             document.getElementById('customer_type').dispatchEvent(new Event('change'));
-            document.getElementById('payment_type').dispatchEvent(new Event('change'));
 
             document.getElementById('corp-search-results').innerHTML =
                 `<div class="status-badge status-completed mt-8"><i class="fas fa-check"></i> ${corp.last_name} ${corp.first_name || ''} を選択中</div>`;
@@ -479,18 +445,13 @@ const NewRequestView = (() => {
             city: document.getElementById('city').value,
             town: document.getElementById('town').value,
             street: document.getElementById('street').value,
-            building_name: document.getElementById('building_name').value,
+            building_name: '',
             phone1: document.getElementById('phone1').value,
             phone2: document.getElementById('phone2').value,
-            mail_address: document.getElementById('mail_address').value,
+            mail_address: '',
             birthday: document.getElementById('birthday').value,
             job_type: document.getElementById('job_type').value,
             payment_type: document.getElementById('payment_type').value,
-            credit_card_number: document.getElementById('credit_card_number').value,
-            credit_card_expire_month: document.getElementById('credit_card_expire_month').value,
-            credit_card_expire_year: document.getElementById('credit_card_expire_year').value,
-            credit_card_name: document.getElementById('credit_card_name').value,
-            credit_card_security_code: document.getElementById('credit_card_security_code').value,
             invoice: '',
             payment_certificate: '',
             billing_address_same: document.getElementById('billing_address_same').checked,
@@ -499,7 +460,7 @@ const NewRequestView = (() => {
             billing_city: document.getElementById('billing_city').value,
             billing_town: document.getElementById('billing_town').value,
             billing_street: document.getElementById('billing_street').value,
-            billing_building: document.getElementById('billing_building').value,
+            billing_building: '',
             billing_customer_name: document.getElementById('billing_customer_name').value,
             sales_channel_id: ''
         };
@@ -516,10 +477,12 @@ const NewRequestView = (() => {
 
         // Create request
         const siteCount = parseInt(document.getElementById('site_count').value) || 1;
+        const agencyEl = document.getElementById('agency_id');
+        const agencyId = (user.role !== 'admin') ? user.agency_id : (agencyEl ? agencyEl.value : user.agency_id);
         const request = Store.create('requests', {
             corporation_id: corpId,
             requested_by: user.user_id,
-            agency_id: user.agency_id,
+            agency_id: agencyId,
             status: 'pending',
             remarks: document.getElementById('remarks').value,
             site_count: siteCount
@@ -543,9 +506,8 @@ const NewRequestView = (() => {
                 request_id: request.id,
                 corporation_id: corpId,
                 supply_point_id: '',
-                service_type: 'electric',
-                pps_code: 'A0517',
-                pps_name: 'エネパル',
+                service_type: 'metered',
+                customer_number: '',
                 application_type: '',
                 plan_name: '',
                 contract_capacity: '',
@@ -574,7 +536,7 @@ const NewRequestView = (() => {
         }
 
         Toast.show(`投入依頼を送信しました（${siteCount}地点）`, 'success');
-        Router.navigate('/my-requests');
+        Router.navigate(user.role === 'admin' ? '/cases' : '/my-requests');
     }
 
     return { render, removeImage, searchCorp, selectCorp, clearSearch };
@@ -584,4 +546,22 @@ const NewRequestView = (() => {
 function getPrefectureOptions() {
     const prefs = ['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県', '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県', '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県', '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'];
     return prefs.map(p => `<option value="${p}">${p}</option>`).join('');
+}
+
+// --- Postal code auto-fill helper (global) ---
+function fetchAddress(zipCode, prefId, cityId, townId) {
+    fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${zipCode}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                const r = data.results[0];
+                const prefEl = document.getElementById(prefId);
+                const cityEl = document.getElementById(cityId);
+                const townEl = document.getElementById(townId);
+                if (prefEl) prefEl.value = r.address1;
+                if (cityEl) cityEl.value = r.address2;
+                if (townEl) townEl.value = r.address3;
+            }
+        })
+        .catch(err => console.error('Zip code lookup failed:', err));
 }

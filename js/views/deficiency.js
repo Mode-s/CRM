@@ -66,10 +66,7 @@ const DeficiencyView = (() => {
                                 <div class="form-group"><label class="form-label">契約者名</label><input type="text" class="form-input" id="def-last-name" value="${corp.last_name || ''}"></div>
                                 <div class="form-group"><label class="form-label">名</label><input type="text" class="form-input" id="def-first-name" value="${corp.first_name || ''}"></div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group"><label class="form-label">電話番号</label><input type="text" class="form-input" id="def-phone" value="${corp.phone1 || ''}"></div>
-                                <div class="form-group"><label class="form-label">メール</label><input type="text" class="form-input" id="def-email" value="${corp.mail_address || ''}"></div>
-                            </div>
+                            <div class="form-group"><label class="form-label">電話番号</label><input type="text" class="form-input" id="def-phone" value="${corp.phone1 || ''}"></div>
                         ` : '<p class="text-secondary">法人情報が見つかりません</p>'}
                     </div>
                 </div>
@@ -146,13 +143,11 @@ const DeficiencyView = (() => {
             const lastName = document.getElementById('def-last-name');
             const firstName = document.getElementById('def-first-name');
             const phone = document.getElementById('def-phone');
-            const email = document.getElementById('def-email');
 
             Store.update('corporations', corp.id, {
                 last_name: lastName ? lastName.value : corp.last_name,
                 first_name: firstName ? firstName.value : corp.first_name,
-                phone1: phone ? phone.value : corp.phone1,
-                mail_address: email ? email.value : corp.mail_address
+                phone1: phone ? phone.value : corp.phone1
             });
         }
 

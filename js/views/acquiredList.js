@@ -34,9 +34,11 @@ const AcquiredListView = (() => {
         const totalCorps = corpEntries.length;
         const etCorps = corpEntries.filter(e => e.requests.every(r => r.status === 'et')).length;
 
-        const totalSites = corpEntries.reduce((sum, e) => sum + e.sites.length, 0);
+        const totalSitesAll = corpEntries.reduce((sum, e) => sum + e.sites.length, 0);
+        const totalSites = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.service_type !== 'gas').length, 0);
         const etSites = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.status === 'et').length, 0);
-        const totalElectric = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.service_type === 'electric').length, 0);
+        const totalMetered = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.service_type === 'metered').length, 0);
+        const totalPower = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.service_type === 'power').length, 0);
         const totalGas = corpEntries.reduce((sum, e) => sum + e.sites.filter(s => s.service_type === 'gas').length, 0);
 
         container.innerHTML = `
@@ -55,10 +57,6 @@ const AcquiredListView = (() => {
                         <div class="stat-icon" style="background:var(--status-et-bg);color:var(--status-et)"><i class="fas fa-trophy"></i></div>
                     </div>
                     <div class="stat-card">
-                        <div><div class="stat-value" style="color:var(--status-et)">${etCorps}</div><div class="stat-label">うちET(確定)</div></div>
-                        <div class="stat-icon" style="background:var(--status-et-bg);color:var(--status-et)"><i class="fas fa-trophy"></i></div>
-                    </div>
-                    <div class="stat-card">
                         <div><div class="stat-value" style="color:var(--status-et)">${etSites}</div><div class="stat-label">ET地点数</div></div>
                         <div class="stat-icon" style="background:var(--status-et-bg);color:var(--status-et)"><i class="fas fa-map-marker-alt"></i></div>
                     </div>
@@ -67,8 +65,12 @@ const AcquiredListView = (() => {
                         <div class="stat-icon blue"><i class="fas fa-map-marker-alt"></i></div>
                     </div>
                     <div class="stat-card">
-                        <div><div class="stat-value" style="color:var(--warning)">${totalElectric}</div><div class="stat-label">電気</div></div>
+                        <div><div class="stat-value" style="color:var(--warning)">${totalMetered}</div><div class="stat-label">従量</div></div>
                         <div class="stat-icon yellow"><i class="fas fa-bolt"></i></div>
+                    </div>
+                    <div class="stat-card">
+                        <div><div class="stat-value" style="color:#e67e22">${totalPower}</div><div class="stat-label">動力</div></div>
+                        <div class="stat-icon" style="background:#fef3e2;color:#e67e22"><i class="fas fa-industry"></i></div>
                     </div>
                     <div class="stat-card">
                         <div><div class="stat-value" style="color:#6366f1">${totalGas}</div><div class="stat-label">ガス</div></div>
@@ -90,7 +92,8 @@ const AcquiredListView = (() => {
                                             <th>法人名</th>
                                             <th>代理店</th>
                                             <th>地点数</th>
-                                            <th>電気</th>
+                                            <th>従量</th>
+                                            <th>動力</th>
                                             <th>ガス</th>
                                             <th>投入完了日</th>
                                         </tr>
@@ -98,7 +101,8 @@ const AcquiredListView = (() => {
                                     <tbody>
                                         ${corpEntries.map(e => {
             const corpName = e.corp ? `${e.corp.last_name} ${e.corp.first_name || ''}` : '不明';
-            const electricCount = e.sites.filter(s => s.service_type === 'electric').length;
+            const meteredCount = e.sites.filter(s => s.service_type === 'metered').length;
+            const powerCount = e.sites.filter(s => s.service_type === 'power').length;
             const gasCount = e.sites.filter(s => s.service_type === 'gas').length;
             const latestDate = e.requests.reduce((latest, r) => {
                 const d = new Date(r.updated_at);
@@ -113,7 +117,8 @@ const AcquiredListView = (() => {
                                                     </td>
                                                     <td class="text-sm">${[...e.agencies].join(', ') || '-'}</td>
                                                     <td><strong>${e.sites.length}</strong></td>
-                                                    <td>${electricCount > 0 ? `<span style="color:var(--warning)"><i class="fas fa-bolt"></i> ${electricCount}</span>` : '-'}</td>
+                                                    <td>${meteredCount > 0 ? `<span style="color:var(--warning)"><i class="fas fa-bolt"></i> ${meteredCount}</span>` : '-'}</td>
+                                                    <td>${powerCount > 0 ? `<span style="color:#e67e22"><i class="fas fa-industry"></i> ${powerCount}</span>` : '-'}</td>
                                                     <td>${gasCount > 0 ? `<span style="color:#6366f1"><i class="fas fa-fire"></i> ${gasCount}</span>` : '-'}</td>
                                                     <td class="text-sm text-secondary">${latestDate.toLocaleDateString('ja-JP')}</td>
                                                 </tr>
@@ -145,18 +150,30 @@ const AcquiredListView = (() => {
                                         ${e.corp ? `<p class="text-sm mb-8"><i class="fas fa-map-marker-alt" style="color:var(--gray-400)"></i> ${e.corp.prefecture || ''}${e.corp.city || ''}${e.corp.town || ''} <i class="fas fa-phone" style="color:var(--gray-400);margin-left:12px;"></i> ${e.corp.phone1 || '-'}</p>` : ''}
                                         ${e.sites.length > 0 ? `
                                             <table class="data-table" style="font-size:0.8rem;">
-                                                <thead><tr><th>供給地点番号</th><th>PPS</th><th>プラン</th><th>種別</th><th>容量</th></tr></thead>
+                                                <thead><tr><th>供給地点番号</th><th>お客様番号</th><th>プラン</th><th>種別</th><th>容量</th></tr></thead>
                                                 <tbody>
                                                     ${e.sites.map(s => `<tr>
                                                         <td class="font-mono">${s.supply_point_id || '-'}</td>
-                                                        <td>${s.pps_name || '-'}</td>
+                                                        <td>${s.customer_number || '-'}</td>
                                                         <td>${s.plan_name || '-'}</td>
-                                                        <td>${s.service_type === 'gas' ? '<i class="fas fa-fire" style="color:#6366f1"></i> ガス' : '<i class="fas fa-bolt" style="color:var(--warning)"></i> 電気'}</td>
+                                                        <td>${s.service_type === 'gas' ? '<i class="fas fa-fire" style="color:#6366f1"></i> ガス' : s.service_type === 'power' ? '<i class="fas fa-industry" style="color:#e67e22"></i> 動力' : '<i class="fas fa-bolt" style="color:var(--warning)"></i> 従量'}</td>
                                                         <td>${s.contract_capacity || '-'}</td>
                                                     </tr>`).join('')}
                                                 </tbody>
                                             </table>
                                         ` : ''}
+                                        <div class="btn-group" style="margin-top:12px;gap:8px;">
+                                            ${e.requests.some(r => r.status === 'completed') ? `
+                                                <button class="btn btn-sm" style="background:var(--status-et-bg);color:var(--status-et);border:1px solid var(--status-et);" onclick="event.stopPropagation();AcquiredListView.changeStatus('${e.corp ? e.corp.id : ''}','et')">
+                                                    <i class="fas fa-trophy"></i> ET登録(成約)
+                                                </button>
+                                            ` : ''}
+                                            ${e.requests.some(r => r.status === 'et') ? `
+                                                <button class="btn btn-sm btn-secondary" onclick="event.stopPropagation();AcquiredListView.changeStatus('${e.corp ? e.corp.id : ''}','completed')">
+                                                    <i class="fas fa-undo"></i> 投入済に戻す
+                                                </button>
+                                            ` : ''}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -188,12 +205,12 @@ const AcquiredListView = (() => {
                 ${allSites.length > 0 ? `
                     <h4 style="margin:8px 0;"><i class="fas fa-map-marker-alt"></i> 獲得地点</h4>
                     <table class="data-table" style="font-size:0.8rem;">
-                        <thead><tr><th>地点番号</th><th>PPS</th><th>プラン</th><th>種別</th></tr></thead>
+                        <thead><tr><th>地点番号</th><th>お客様番号</th><th>プラン</th><th>種別</th></tr></thead>
                         <tbody>${allSites.map(s => `<tr>
                             <td class="font-mono">${s.supply_point_id || '-'}</td>
-                            <td>${s.pps_name || '-'}</td>
+                            <td>${s.customer_number || '-'}</td>
                             <td>${s.plan_name || '-'}</td>
-                            <td>${s.service_type === 'gas' ? 'ガス' : '電気'}</td>
+                            <td>${s.service_type === 'gas' ? 'ガス' : s.service_type === 'power' ? '動力' : '従量'}</td>
                         </tr>`).join('')}</tbody>
                     </table>
                 ` : ''}
@@ -201,5 +218,30 @@ const AcquiredListView = (() => {
         `, `<button class="btn btn-secondary" onclick="Modal.hide()">閉じる</button>`);
     }
 
-    return { render, showCorpDetail };
+    function changeStatus(corpId, newStatus) {
+        if (!corpId) return;
+        const labels = { completed: '投入済', et: 'ET(成約)' };
+        const requests = Store.query('requests', r => r.corporation_id === corpId && (r.status === 'completed' || r.status === 'et'));
+        if (requests.length === 0) return;
+
+        Modal.confirm(
+            'ステータス変更',
+            `この法人の案件(${requests.length}件)を「${labels[newStatus]}」に変更しますか？`,
+            () => {
+                requests.forEach(r => {
+                    Store.changeStatus('requests', r.id, newStatus);
+                    const sites = Store.query('sites', s => s.request_id === r.id);
+                    sites.forEach(s => {
+                        if (s.status !== 'cancelled') Store.changeStatus('sites', s.id, newStatus);
+                    });
+                });
+                Toast.show(`ステータスを「${labels[newStatus]}」に変更しました`, 'success');
+                Router.handleRoute();
+            },
+            '変更する',
+            newStatus === 'et' ? 'btn-primary' : 'btn-secondary'
+        );
+    }
+
+    return { render, showCorpDetail, changeStatus };
 })();
